@@ -1,0 +1,71 @@
+{
+  "name": "chatluna-plugin-jmcomic",
+  "version": "0.0.1",
+  "description": "为 ChatLuna v2 提供 JMComic 搜索、分类浏览、详情查询与加密 PDF/ZIP 下载工具",
+  "type": "module",
+  "license": "MIT",
+  "keywords": ["chatluna-plugin", "jmcomic"],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/index.d.ts", "default": "./lib/index.js" },
+    "./package.json": "./package.json",
+    "./client": { "types": "./client/index.ts", "default": "./client/index.ts" }
+  },
+  "files": ["lib", "dist", "client", "README.md", "LICENSE"],
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "sync": "node scripts/sync-to-v2.mjs --once",
+    "sync:watch": "node scripts/sync-to-v2.mjs",
+    "build": "yakumo build",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit"
+  },
+  "peerDependencies": {
+    "@chatluna/schema": ">=2.0.0-alpha.0",
+    "@chatluna/utils": ">=2.0.0-alpha.0",
+    "@satorijs/core": "~4.6.1",
+    "cordis": "^4.0.0-rc.12"
+  },
+  "dependencies": {
+    "archiver": "^5.3.2",
+    "archiver-zip-encrypted": "^1.0.11",
+    "pdfkit": "^0.18.0",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@chatluna/chat": "workspace:*",
+    "@chatluna/message": "workspace:*",
+    "@chatluna/permission": "workspace:*",
+    "@chatluna/satori": "workspace:*",
+    "@chatluna/schema": "workspace:*",
+    "@chatluna/tool": "workspace:*",
+    "@chatluna/ui-client": "workspace:*",
+    "@chatluna/ui-kit": "workspace:*",
+    "@chatluna/ui-schema-form": "workspace:*",
+    "@chatluna/ui-server": "workspace:*",
+    "@chatluna/utils": "workspace:*",
+    "@cordisjs/plugin-http": "^1.5.2",
+    "@cordisjs/plugin-server": "^1.7.0",
+    "@cordisjs/unyaml": "^3.0.0",
+    "@satorijs/core": "~4.6.1",
+    "@types/archiver": "^5.3.4",
+    "@types/node": "^24.0.0",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "cordis": "4.0.0-rc.12",
+    "jsdom": "^31.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "7.0.2",
+    "vitest": "^3.2.4"
+  },
+  "cordis": {
+    "description": {
+      "zh": "JMComic 搜索、分类浏览、详情与整本 PDF/ZIP 下载",
+      "en": "JMComic search, categories, album details and encrypted PDF/ZIP downloads"
+    },
+    "service": { "required": ["http", "tools", "chat"], "optional": ["server", "chatluna_webui"] }
+  }
+}

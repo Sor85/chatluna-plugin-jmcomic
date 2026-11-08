@@ -1,0 +1,7 @@
+buffer.title: 消息缓冲
+buffer.description: 下载完成后读取文件并发送到当前会话，不要求 ChatLuna 与 OneBot 共享文件目录
+file.title: 本地文件路径
+file.description: 通过本地文件路径发送文件；Docker 部署时，ChatLuna 数据目录需要以相同绝对路径挂载到 OneBot 容器中，OneBot 必须能够读取对应文件
+url.title: HTTP(S) 下载链接
+url.description: 生成有时效的文件链接并返回给模型，不直接发送消息；接收方必须能够访问公开基础地址，插件重启后链接失效
+tools.description: 四个工具默认全部注册；工具启用、名称和描述由 ChatLuna v2 统一管理

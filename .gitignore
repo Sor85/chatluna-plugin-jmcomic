@@ -1,0 +1,10 @@
+node_modules/
+lib/
+dist/
+data/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.playwright-cli/
+.playwright-mcp/
