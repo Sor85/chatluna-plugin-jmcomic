@@ -1,6 +1,6 @@
 # chatluna-plugin-jmcomic
 
-为 ChatLuna v2 提供 JMComic 搜索、分类浏览、详情查询与 PDF/ZIP 下载功能。
+为 ChatLuna 提供 JMComic 搜索、分类浏览、详情查询与 PDF/ZIP 下载功能。
 
 ## 功能
 

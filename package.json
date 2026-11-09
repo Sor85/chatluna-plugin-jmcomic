@@ -1,7 +1,7 @@
 {
   "name": "chatluna-plugin-jmcomic",
   "version": "0.0.1",
-  "description": "为 ChatLuna v2 提供 JMComic 搜索、分类浏览、详情查询与加密 PDF/ZIP 下载工具",
+  "description": "为 ChatLuna 提供 JMComic 搜索、分类浏览、详情查询与加密 PDF/ZIP 下载工具",
   "type": "module",
   "license": "MIT",
   "keywords": ["chatluna-plugin", "jmcomic"],
