@@ -18,12 +18,11 @@ export function sanitizeFileName(fileName: string) {
 }
 
 // 根据模板生成输出名，并统一做文件名清理。
-export function formatOutputName(template: string, name: string, id: string, index?: number) {
+export function formatOutputName(template: string, name: string, id: string) {
   return sanitizeFileName(
     template
       .split('{{name}}').join(name)
       .split('{{id}}').join(id)
-      .split('{{index}}').join(index == null ? '' : String(index))
   )
 }
 

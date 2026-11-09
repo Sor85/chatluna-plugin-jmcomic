@@ -3,7 +3,6 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 
 const token = process.env.SANDBOX_TOKEN
@@ -53,14 +52,7 @@ try {
       idempotencyKey: `${state.runId}-${conversationId}`
     })
     const wait = await call('wait_for_message', { cursor: sent.cursorBefore, conversationId, authorId: state.botId, settleSeconds: 3, timeoutSeconds: 120 })
-    const routeKey = conversationId.startsWith('group:') ? `channel:${state.groupId}` : `user:${state.userId}`
-    const route = 'r-' + createHash('sha256').update(`satori:onebot:${state.botId}:${routeKey}`).digest('hex').slice(0, 12)
-    let calls
-    try {
-      calls = await call('list_model_calls', { conversationId, botId: state.botId, limit: 20 })
-    } catch {
-      calls = await call('list_model_calls', { sessionId: `route:${route}:sandbox-space-${state.spaceId}`, limit: 20 })
-    }
+    const calls = await call('list_model_calls', { conversationId, botId: state.botId, limit: 20 })
     const conversation = await call('get_conversation', { conversationId, operatorId: state.userId, messageLimit: 20 })
     evidence.push({ conversationId, wait, calls, conversation })
     await writeFile(`${root}/evidence.json`, JSON.stringify(evidence, null, 2))

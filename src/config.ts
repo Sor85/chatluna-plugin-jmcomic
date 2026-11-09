@@ -69,5 +69,3 @@ export const Config: Schema<Partial<Config>, Config> = Schema.intersect([
     debug: Schema.boolean().label('调试日志').description('输出请求重试和下载进度，不记录文件密码与内容').default(false)
   }).description('性能与调试')
 ])
-
-export const defaultConfig = Config({})

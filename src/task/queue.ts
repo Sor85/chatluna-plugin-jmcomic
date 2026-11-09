@@ -10,12 +10,6 @@ export interface QueueTask<Input, Result> {
   error?: string
 }
 
-export interface AddTaskResult {
-  taskId: number
-  pendingAhead: number
-  queuePosition: number
-}
-
 export class TaskQueue<Input, Result> {
   private tasks: Array<QueueTask<Input, Result>> = []
   private active = 0
@@ -28,13 +22,12 @@ export class TaskQueue<Input, Result> {
     if (!Number.isInteger(concurrency) || concurrency < 1) throw new RangeError('concurrency must be a positive integer')
   }
 
-  add(input: Input): AddTaskResult {
+  add(input: Input): number {
     if (this.stopped) throw new Error('JMComic queue is stopped')
-    const pendingAhead = this.tasks.filter((task) => !isTerminal(task)).length
     const task: QueueTask<Input, Result> = { id: this.nextId++, input, status: 'pending', createdAt: new Date().toISOString() }
     this.tasks.push(task)
     queueMicrotask(() => this.process())
-    return { taskId: task.id, pendingAhead, queuePosition: pendingAhead + 1 }
+    return task.id
   }
 
   get(id: number) { return this.tasks.find((task) => task.id === id) }
@@ -65,22 +58,15 @@ export class TaskQueue<Input, Result> {
     await new Promise<void>((resolve) => this.idleResolvers.push(resolve))
   }
 
-  async waitForTask(id: number, timeoutMs?: number): Promise<QueueTask<Input, Result> | undefined> {
+  async waitForTask(id: number): Promise<QueueTask<Input, Result> | undefined> {
     const task = this.get(id)
     if (!task || isTerminal(task)) return task
     await new Promise<void>((resolve) => {
       const resolvers = this.taskResolvers.get(id) ?? new Set()
-      const finish = () => {
-        clearTimeout(timeout)
-        resolvers.delete(finish)
-        if (!resolvers.size) this.taskResolvers.delete(id)
-        resolve()
-      }
-      const timeout = timeoutMs === undefined ? undefined : setTimeout(finish, timeoutMs)
-      resolvers.add(finish)
+      resolvers.add(resolve)
       this.taskResolvers.set(id, resolvers)
     })
-    return this.get(id)
+    return task
   }
 
   private process() {

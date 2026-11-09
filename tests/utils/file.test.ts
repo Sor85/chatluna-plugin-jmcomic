@@ -26,10 +26,6 @@ describe('formatOutputName', () => {
   it('replaces known placeholders and sanitizes result', () => {
     expect(formatOutputName('{{name}} ({{id}})', 'A/B', '123')).toBe('A_B_123')
   })
-
-  it('replaces index placeholder', () => {
-    expect(formatOutputName('{{name}}-{{id}}-{{index}}', 'A', '123', 2)).toBe('A-123-2')
-  })
 })
 
 describe('filterSensitiveFileName', () => {

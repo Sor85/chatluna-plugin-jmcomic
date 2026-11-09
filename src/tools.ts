@@ -95,7 +95,7 @@ export function registerTools(ctx: Context, config: Config, service: JmService, 
       service.assertDelivery(session)
       const format = config.allowAIChangeFormat ? input.format ?? config.defaultFormat : config.defaultFormat
       const password = input.password ?? config.password
-      const tasks = albumIds.map((albumId) => ({ albumId, ...service.queue.add({ albumId, format, password, session, signal }) }))
+      const tasks = albumIds.map((albumId) => ({ albumId, taskId: service.queue.add({ albumId, format, password, session, signal }) }))
       const results = await Promise.all(tasks.map(async (added) => {
         const task = await service.queue.waitForTask(added.taskId)
         if (task?.status === 'completed' && task.result) {

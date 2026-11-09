@@ -7,19 +7,7 @@ import { createTokenHeaders, decodeEncryptedJson, md5Hex } from '../../src/jm/cr
 import { createPhotoEntity } from '../../src/jm/entities'
 
 function createPhoto(id: number, image = '00001.webp') {
-  return createPhotoEntity({
-    id,
-    series: [],
-    tags: '',
-    name: 'p',
-    images: [image],
-    image_ids: [image.split('.')[0]],
-    addtime: '',
-    series_id: '',
-    is_favorite: false,
-    liked: false,
-    scramble_id: 0
-  })
+  return createPhotoEntity({ id, name: 'p', images: [image] })
 }
 
 describe('createTokenHeaders', () => {

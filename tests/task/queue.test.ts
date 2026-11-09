@@ -4,32 +4,21 @@
 import { describe, expect, it } from 'vitest'
 import { TaskQueue, type QueueTask } from '../../src/task/queue'
 
-function deferred<T>() {
-  let resolve!: (value: T | PromiseLike<T>) => void
-  const promise = new Promise<T>((done) => {
-    resolve = done
-  })
-  return { promise, resolve }
-}
-
 describe('TaskQueue', () => {
   it('uses short numeric task ids', () => {
     const queue = new TaskQueue<string, string>(async (input) => input, 1)
 
-    expect(queue.add('a').taskId).toBe(1)
-    expect(queue.add('b').taskId).toBe(2)
+    expect(queue.add('a')).toBe(1)
+    expect(queue.add('b')).toBe(2)
   })
 
   it('runs tasks and stores completed result', async () => {
     const queue = new TaskQueue<string, string>(async (input) => `${input}-done`, 1)
-    const result = queue.add('a')
-
-    expect(result.pendingAhead).toBe(0)
-    expect(result.queuePosition).toBe(1)
+    const taskId = queue.add('a')
 
     await queue.waitForIdle()
 
-    const task = queue.get(result.taskId)
+    const task = queue.get(taskId)
     expect(task?.status).toBe('completed')
     expect(task?.result).toBe('a-done')
     expect(task?.processedAt).toEqual(expect.any(String))
@@ -40,10 +29,10 @@ describe('TaskQueue', () => {
       throw new Error('boom')
     }, 1)
 
-    const result = queue.add('a')
+    const taskId = queue.add('a')
     await queue.waitForIdle()
 
-    const task = queue.get(result.taskId)
+    const task = queue.get(taskId)
     expect(task?.status).toBe('failed')
     expect(task?.error).toBe('boom')
     expect(task?.processedAt).toEqual(expect.any(String))
@@ -52,7 +41,7 @@ describe('TaskQueue', () => {
   it('does not exceed concurrency limit', async () => {
     let active = 0
     let maxActive = 0
-    const releases = Array.from({ length: 4 }, () => deferred<void>())
+    const releases = Array.from({ length: 4 }, () => Promise.withResolvers<void>())
 
     const queue = new TaskQueue<number, number>(async (input) => {
       active++
@@ -89,7 +78,7 @@ describe('TaskQueue', () => {
 
   it('returns a copied task list', async () => {
     const queue = new TaskQueue<string, string>(async (input) => input, 1)
-    const result = queue.add('a')
+    const taskId = queue.add('a')
     const tasks = queue.list()
 
     tasks.push({
@@ -100,7 +89,7 @@ describe('TaskQueue', () => {
     } satisfies QueueTask<string, string>)
 
     expect(queue.list()).toHaveLength(1)
-    expect(queue.get(result.taskId)?.input).toBe('a')
+    expect(queue.get(taskId)?.input).toBe('a')
     await queue.waitForIdle()
   })
 
@@ -110,77 +99,45 @@ describe('TaskQueue', () => {
     }
   })
 
-  it('waits for one task to finish', async () => {
-    const release = deferred<void>()
+  it('resolves all waiters only after the task finishes', async () => {
+    const release = Promise.withResolvers<void>()
     const queue = new TaskQueue<string, string>(async (input) => {
       await release.promise
       return `${input}-done`
     }, 1)
-    const result = queue.add('a')
-    const waiting = queue.waitForTask(result.taskId, 1000)
+    const taskId = queue.add('a')
+    let finished = false
+    const waiting = Promise.all([queue.waitForTask(taskId), queue.waitForTask(taskId)])
+      .then((tasks) => { finished = true; return tasks })
+
+    await new Promise<void>((resolve) => setImmediate(resolve))
+    expect(queue.get(taskId)?.status).toBe('processing')
+    expect(finished).toBe(false)
 
     release.resolve()
 
-    await expect(waiting).resolves.toMatchObject({
-      id: result.taskId,
-      status: 'completed',
-      result: 'a-done'
-    })
-  })
-
-  it('waits for one task to finish without timeout', async () => {
-    const release = deferred<void>()
-    const queue = new TaskQueue<string, string>(async (input) => {
-      await release.promise
-      return `${input}-done`
-    }, 1)
-    const result = queue.add('a')
-    const waiting = queue.waitForTask(result.taskId)
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 5))
-    expect(queue.get(result.taskId)?.status).toBe('processing')
-
-    release.resolve()
-
-    await expect(waiting).resolves.toMatchObject({
-      id: result.taskId,
-      status: 'completed',
-      result: 'a-done'
-    })
-  })
-
-  it('returns current task when single task wait times out', async () => {
-    const release = deferred<void>()
-    const queue = new TaskQueue<string, string>(async (input) => {
-      await release.promise
-      return input
-    }, 1)
-    const result = queue.add('a')
-
-    await expect(queue.waitForTask(result.taskId, 1)).resolves.toMatchObject({
-      id: result.taskId,
-      status: 'processing'
-    })
-
-    release.resolve()
-    await queue.waitForIdle()
+    for (const task of await waiting) {
+      expect(task).toMatchObject({ id: taskId, status: 'completed', result: 'a-done' })
+    }
+    expect(await queue.waitForTask(taskId)).toBe(queue.get(taskId))
+    expect(await queue.waitForTask(999)).toBeUndefined()
   })
 
   it('prunes terminal tasks older than the retention window', async () => {
     const queue = new TaskQueue<string, string>(async (input) => input, 1)
-    const oldResult = queue.add('old')
-    const freshResult = queue.add('fresh')
+    const oldId = queue.add('old')
+    const freshId = queue.add('fresh')
     await queue.waitForIdle()
 
-    const oldTask = queue.get(oldResult.taskId)
-    const freshTask = queue.get(freshResult.taskId)
+    const oldTask = queue.get(oldId)
+    const freshTask = queue.get(freshId)
     oldTask!.processedAt = '2026-05-20T00:00:00.000Z'
     freshTask!.processedAt = '2026-05-21T23:30:00.000Z'
 
     const removed = queue.pruneTerminalTasks(24 * 60 * 60 * 1000, new Date('2026-05-22T00:00:00.000Z'))
 
     expect(removed).toBe(1)
-    expect(queue.get(oldResult.taskId)).toBeUndefined()
-    expect(queue.get(freshResult.taskId)?.input).toBe('fresh')
+    expect(queue.get(oldId)).toBeUndefined()
+    expect(queue.get(freshId)?.input).toBe('fresh')
   })
 })

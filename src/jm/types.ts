@@ -1,10 +1,4 @@
 // JM API 原始类型和插件内部实体类型。
-// 只保留第一版搜索、详情和整本下载需要的字段。
-
-export interface JmEncryptedResponse {
-  code: number
-  data: string
-}
 
 export interface JmAlbumSeries {
   id: string
@@ -28,16 +22,8 @@ export interface JmAlbumJson {
 
 export interface JmPhotoJson {
   id: number
-  series: string[]
-  tags: string
   name: string
   images: string[]
-  image_ids: string[]
-  addtime: string
-  series_id: string
-  is_favorite: boolean
-  liked: boolean
-  scramble_id: number
 }
 
 export interface JmSearchContentJson {
@@ -56,13 +42,9 @@ export interface JmSearchJson {
   content: JmSearchContentJson[]
 }
 
-export type JmBrowseJson = JmSearchJson
-
 export interface JmPhotoEntity {
   id: string
-  name: string
   images: string[]
-  imageNames: string[]
   getSplitNumbers(scrambleId: number): number[]
 }
 

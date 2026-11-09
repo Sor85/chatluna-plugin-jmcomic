@@ -14,9 +14,7 @@ export function createPhotoEntity(json: JmPhotoJson): JmPhotoEntity {
 
   return {
     id,
-    name: json.name,
     images: json.images,
-    imageNames,
     getSplitNumbers(scrambleId: number) {
       return imageNames.map((name) => {
         const numericId = Number(id)

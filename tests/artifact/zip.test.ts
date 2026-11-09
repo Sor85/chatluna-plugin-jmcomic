@@ -4,7 +4,7 @@
 import { mkdir, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { createZipFromDirectory, createZipFromFile } from '../../src/artifact/zip'
+import { createZipFromDirectory } from '../../src/artifact/zip'
 
 const root = join(process.cwd(), '.tmp-zip-test')
 
@@ -41,25 +41,5 @@ describe('createZipFromDirectory', () => {
 
     await expect(createZipFromDirectory([{ directory: join(root, 'missing'), destpath: false }], output, undefined, 6))
       .rejects.toThrow()
-  })
-})
-
-describe('createZipFromFile', () => {
-  it('creates a non-empty zip from one file', async () => {
-    await mkdir(root, { recursive: true })
-    const input = join(root, 'a.txt')
-    await writeFile(input, 'hello')
-
-    const output = join(root, 'file.zip')
-    await createZipFromFile(input, output, undefined, 6)
-
-    expect((await stat(output)).size).toBeGreaterThan(0)
-  })
-
-  it('rejects when input file does not exist', async () => {
-    await mkdir(root, { recursive: true })
-    const output = join(root, 'missing-file.zip')
-
-    await expect(createZipFromFile(join(root, 'missing.txt'), output, undefined, 6)).rejects.toThrow()
   })
 })

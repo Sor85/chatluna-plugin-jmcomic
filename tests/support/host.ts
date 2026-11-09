@@ -23,12 +23,10 @@ export async function createHost(overrides: Partial<Config> = {}) {
   await ctx.plugin(Tools, {})
   const config = Config.parse({ minimumFreeDiskMb: 0, retryCount: 1, ...overrides })
   const sent: Fragment[] = []
-  const send = vi.fn(async (_route: unknown, content: Fragment) => { sent.push(content); return { messageIds: ['sent'] } })
-  const bot = { ctx, platform: 'onebot', selfId: '90001', user: { id: '90001' }, logger: ctx.logger,
-    sendMessage: async (_channel: string, content: Fragment) => (await send(_channel, content)).messageIds
-  }
+  const send = vi.fn(async (_channel: string, content: Fragment) => { sent.push(content); return ['sent'] })
+  const bot = { ctx, platform: 'onebot', selfId: '90001', user: { id: '90001' }, logger: ctx.logger, sendMessage: send }
   const session = new Session(bot, { type: 'message', platform: 'onebot', selfId: '90001', user: { id: '90002' }, channel: { id: '90003', type: 0 }, guild: { id: '90003' }, message: { id: '1' } })
-  ctx.provide('chat', { inbound: (routeId: string) => routeId === 'test-route' ? session : undefined, send })
+  ctx.provide('chat', { inbound: (routeId: string) => routeId === 'test-route' ? session : undefined })
   const lifetime = new AbortController()
   const client = new JmClient(new JmHttp({ fetch: fixture.request, config, signal: lifetime.signal, logger: ctx.logger }))
   const ready = Promise.withResolvers<JmService>()

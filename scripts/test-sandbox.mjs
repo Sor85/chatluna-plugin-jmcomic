@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 // 在 v2 根目录执行：node --import @oxc-node/core/register external/jmcomic/scripts/test-sandbox.mjs
 import { createRequire } from 'node:module'
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 
 const host = resolve(process.env.CHATLUNA_V2_ROOT ?? join(fileURLToPath(new URL('.', import.meta.url)), '../../..'))
@@ -37,21 +36,9 @@ const origin = `http://127.0.0.1:${app.server._http.address().port}`
 app.provide('http', (url, options) => fixture.request(url, {
   method: options.method, headers: options.headers, body: options.data, signal: options.signal
 }))
-const files = new Map()
-app.provide('chatluna_storage', {
-  async createTempFile(buffer, filename, options = {}) {
-    const id = createHash('sha256').update(buffer).digest('hex')
-    const info = { id, name: filename, type: options.mimeType ?? 'application/octet-stream', size: buffer.length }
-    files.set(id, { ...info, buffer })
-    return info
-  },
-  async readFile(id) { return files.get(id) ?? null },
-  async getTempFile(id) { return files.get(id) ?? null },
-  async localPath() { return undefined }
-})
-// 仅缩小 Agent/模型依赖；bind、send、媒体处理仍走原生 ChatService。
-class SendingChat extends ChatService { static inject = ['satori'] }
-await app.plugin(SendingChat, { inlineLimit: 5 * 1024 * 1024 })
+// 保留原生 ChatService 入站会话绑定，不启动 Agent 或调用模型。
+class InboundChat extends ChatService { static inject = ['satori'] }
+await app.plugin(InboundChat, {})
 const sessions = new Map()
 app.on('message', (session) => {
   sessions.set(`${session.selfId}:${session.channelId}`, session)
@@ -115,8 +102,7 @@ try {
   for (const fileMethod of ['buffer', 'file', 'url']) {
     await configure({ fileMethod })
     for (const [index, bot] of bots.entries()) {
-      const direct = conversations.items.find((item) => item.kind === 'private' && item.participantIds?.includes(bot.id))
-        ?? conversations.items.find((item) => item.id?.startsWith('private:') && item.id.split(':').includes(bot.id))
+      const direct = conversations.items.find((item) => item.type === 'direct' && item.id.split(':').includes(bot.id))
       assert(direct, 'Missing private conversation')
       for (const conversationId of [`group:${73001 + index}`, direct.id]) {
         if (fileMethod === 'buffer') for (const [name, args] of [
@@ -157,7 +143,7 @@ try {
             const action = await call('wait_for_onebot_action', { cursor: run.incoming.cursorBefore, botId: bot.id, action: conversationId.startsWith('group:') ? 'send_group_msg' : 'send_private_msg', status: 'success', timeoutSeconds: 5 })
             assert.equal(action.outcome, 'matched')
             assert.match(JSON.stringify(action), new RegExp(`\\.${format}`))
-            assert.match(JSON.stringify(action), fileMethod === 'file' ? /file:\/\// : /base64/)
+            assert.match(JSON.stringify(action), /base64/)
           }
           results.push({ implementation: bot.implementation, conversationId, fileMethod, format, encrypted: Boolean(password), ok: true })
         }

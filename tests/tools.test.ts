@@ -46,7 +46,7 @@ describe('v2 原生工具', () => {
     app = await createHost({ cache: false })
     expect(await app.execute('jmcomic_download', { albumId: '200' })).toMatchObject({ ok: true, value: { ok: true } })
     expect(await readdir(join(app.root, 'album'))).toEqual([])
-    app.send.mockResolvedValueOnce({ messageIds: [] })
+    app.send.mockResolvedValueOnce([])
     expect(await app.execute('jmcomic_download', { albumId: '200' })).toMatchObject({ ok: true, value: { ok: false, error: expect.stringContaining('消息 ID') } })
   })
   it('本地文件模式保留 file URI 而不改成内联数据', async () => {

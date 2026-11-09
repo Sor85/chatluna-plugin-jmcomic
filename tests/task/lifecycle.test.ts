@@ -44,11 +44,11 @@ describe('任务生命周期', () => {
     const next = queue.add('next')
     await new Promise<void>((resolve) => queueMicrotask(resolve))
     queue.stop()
-    expect(await queue.waitForTask(next.taskId)).toMatchObject({ status: 'failed', error: 'JMComic plugin unloaded' })
+    expect(await queue.waitForTask(next)).toMatchObject({ status: 'failed', error: 'JMComic plugin unloaded' })
     expect(() => queue.add('later')).toThrow('stopped')
     gate.resolve()
     await queue.waitForIdle()
-    expect(queue.get(first.taskId)?.status).toBe('completed')
+    expect(queue.get(first)?.status).toBe('completed')
   })
   it('worker 失败等待其他写入结束，不提前返回', async () => {
     const gate = Promise.withResolvers<void>()
