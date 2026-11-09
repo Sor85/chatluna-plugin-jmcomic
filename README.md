@@ -11,15 +11,14 @@
 | `jmcomic_info` | 本子详情、章节、页数、作者、标签、浏览量和点赞数 |
 | `jmcomic_download` | 单本或批量下载，去重后最多 10 本，等待完成并返回逐本结果 |
 
-支持多章节导出、PDF 与 AES-256 ZIP 密码保护、文件名敏感词过滤、下载队列与缓存自动清理。
+支持多章节导出、PDF 与 AES-256 ZIP 密码保护、下载队列与缓存自动清理。
 
 ## 配置
 
 | 配置 | 默认值 | 说明 |
 | --- | --- | --- |
 | `defaultFormat` | `pdf` | PDF 或 ZIP |
-| `fileName` | `{{name}} ({{id}})` | 导出名模板，文件名统一清理 |
-| `filterSensitiveFileName` | `false` | 只过滤展示名，不改磁盘路径 |
+| `fileName` | `{name} ({id})` | 单花括号导出名模板，字段见下文，文件名统一清理 |
 | `password` | 空 | PDF/ZIP 默认密码；工具传空字符串可取消本次加密 |
 | `allowAIChangeFormat` | `true` | 允许模型临时改格式；关闭后移除工具的 format 参数 |
 | `zipLevel` | `6` | ZIP 压缩等级 0–9 |
@@ -34,6 +33,22 @@
 | `concurrentDownloadLimit` | `8` | 单任务图片下载并发数 |
 | `concurrentDecodeLimit` | `4` | 单任务图片解码并发数 |
 | `debug` | `false` | 请求重试与进度日志 |
+
+### 文件名模板
+
+模板使用单花括号，文件扩展名按导出格式自动添加。
+
+| 占位符 | 内容 |
+| --- | --- |
+| `{name}` | 本子标题 |
+| `{id}` | 本子 ID |
+| `{author}` | 作者 |
+| `{tags}` | 标签 |
+| `{actors}` | 角色 |
+| `{chapters}` | 实际导出章节数 |
+| `{pages}` | 实际导出总页数 |
+
+作者、标签和角色的多值以顿号分隔，缺失时留空。例如 `{author}-{name}-{id}-{pages}页`。替换完成后统一清理非法文件名字符，消息附件、下载响应头和工具结果使用同一导出文件名。
 
 ### 文件传输
 

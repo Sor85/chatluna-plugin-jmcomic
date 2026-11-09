@@ -56,7 +56,7 @@ export class AlbumDownloader {
       await this.downloadAndDecodePhoto(photo, albumDir, album.photos.length > 1, input.signal)
     }
     input.signal?.throwIfAborted()
-    const outputName = `${formatOutputName(this.config.fileName, album.name, album.id)}.${input.format}`
+    const outputName = `${formatOutputName(this.config.fileName, album)}.${input.format}`
     const filePath = join(outputDir, outputName)
     const temporaryPath = join(outputDir, `${randomUUID()}.tmp`)
     try {

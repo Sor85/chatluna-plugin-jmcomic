@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 在 v2 根目录执行：node --import @oxc-node/core/register external/jmcomic/scripts/test-sandbox.mjs
 import { createRequire } from 'node:module'
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -63,6 +63,8 @@ await app.start()
 const api = `http://127.0.0.1:${endpoint.getAddress().port}/api/v1/tools/`
 let spaceId, fiber, serial = 0
 const results = []
+const spaceIds = []
+const bots = ['napcat', 'llbot', 'snowluma'].map((implementation, index) => ({ id: String(72001 + index), implementation }))
 const call = async (name, args = {}) => {
   const response = await fetch(`${api}${name}`, {
     method: 'POST', headers: { Authorization: `Bearer ${credential.token}`, 'Content-Type': 'application/json' },
@@ -87,18 +89,21 @@ async function execute(bot, conversationId, toolName, args) {
   const replies = spaces.getControl(spaceId).getSnapshot().messages.slice(before).filter((message) => message.authorId === bot.id)
   return { incoming, tool, replies }
 }
-try {
-  const created = await call('create_test_space', { name: 'JMComic 三实现完整矩阵', idempotencyKey: 'create' })
+async function createTestSpace(name) {
+  const created = await call('create_test_space', { spaceId: undefined, name, idempotencyKey: `create-${spaceIds.length}` })
   spaceId = created.spaceId
-  const bots = ['napcat', 'llbot', 'snowluma'].map((implementation, index) => ({ id: String(72001 + index), implementation }))
+  spaceIds.push(spaceId)
   const changes = [{ action: 'create-user', data: { id: '71001', name: 'JMComic 测试用户' } }]
   for (const [index, bot] of bots.entries()) changes.push(
     { action: 'create-bot', data: { ...bot, name: `测试 ${bot.implementation}` } },
     { action: 'create-group', data: { id: String(73001 + index), name: 'JMComic 测试群', members: [{ participantId: '71001', role: 'owner' }, { participantId: bot.id, role: 'member' }] } },
     { action: 'set-friendship', data: { firstId: '71001', secondId: bot.id, enabled: true } }
   )
-  await call('apply_environment_changes', { expectedRevision: created.revision, changes, idempotencyKey: 'entities' })
-  const conversations = await call('list_conversations', { operatorId: '71001' })
+  await call('apply_environment_changes', { expectedRevision: created.revision, changes, idempotencyKey: `entities-${spaceId}` })
+  return call('list_conversations', { operatorId: '71001' })
+}
+try {
+  let conversations = await createTestSpace('JMComic 三实现完整矩阵')
   for (const fileMethod of ['buffer', 'file', 'url']) {
     await configure({ fileMethod })
     for (const [index, bot] of bots.entries()) {
@@ -166,7 +171,51 @@ try {
   assert.equal(batch.tool.value.results.length, 3)
   assert.equal(batch.replies.length, 2)
   results.push({ mode: 'batch-dedup-partial-failure', ok: true })
-  await call('complete_test_space', { idempotencyKey: 'complete' })
+  fixture.state.albumName = '命名验证图册'
+  fixture.state.authors = ['作者甲', '作者乙']
+  fixture.state.tags = ['标签甲', '标签乙']
+  fixture.state.actors = ['角色甲']
+  const fileName = '{author}-{name}-{id}-{tags}-{actors}-{chapters}章-{pages}页'
+  const outputRoot = join(root, 'runtime/data/chatluna/jmcomic/album/100/output')
+  for (const fileMethod of ['buffer', 'url']) {
+    await call('complete_test_space', { idempotencyKey: `complete-${spaceId}` })
+    conversations = await createTestSpace(`JMComic 文件名模板 ${fileMethod}`)
+    await configure({ fileName, fileMethod })
+    for (const [index, bot] of bots.entries()) {
+      const direct = conversations.items.find((item) => item.type === 'direct' && item.id.split(':').includes(bot.id))
+      for (const conversationId of [`group:${73001 + index}`, direct.id]) for (const format of ['pdf', 'zip']) {
+        const before = new Set(await readdir(outputRoot))
+        const run = await execute(bot, conversationId, 'jmcomic_download', { albumId: '100', format })
+        assert.equal(run.tool.ok, true, JSON.stringify(run.tool))
+        assert.equal(run.tool.value.ok, true, JSON.stringify(run.tool))
+        const expectedName = `作者甲、作者乙-命名验证图册-100-标签甲、标签乙-角色甲-2章-4页.${format}`
+        assert.equal(run.tool.value.fileName, expectedName)
+        const created = (await readdir(outputRoot)).filter((directory) => !before.has(directory))
+        assert.equal(created.length, 1)
+        const filePath = join(outputRoot, created[0], expectedName)
+        const bytes = await readFile(filePath)
+        let contentDisposition
+        if (fileMethod === 'buffer') {
+          assert.equal(run.replies.length, 1)
+          assert.equal(run.replies[0].media[0].name, expectedName)
+          assert.equal(run.replies[0].content, `[文件] ${expectedName}`)
+          const action = await call('wait_for_onebot_action', { cursor: run.incoming.cursorBefore, botId: bot.id, action: conversationId.startsWith('group:') ? 'send_group_msg' : 'send_private_msg', status: 'success', timeoutSeconds: 5 })
+          assert.equal(action.outcome, 'matched')
+          assert(JSON.stringify(action).includes(expectedName), 'OneBot action 未保留导出文件名')
+        } else {
+          assert.equal(run.replies.length, 0)
+          const response = await fetch(run.tool.value.fileUrl)
+          assert.equal(response.status, 200)
+          contentDisposition = response.headers.get('content-disposition')
+          assert.equal(decodeURIComponent(contentDisposition.split("filename*=UTF-8''")[1]), expectedName)
+          assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes)
+        }
+        assert.deepEqual(await readFile(filePath), bytes)
+        results.push({ mode: 'filename-template', spaceId, implementation: bot.implementation, conversationId, fileMethod, format, fileName: expectedName, filePath, contentDisposition, ok: true })
+      }
+    }
+  }
+  await call('complete_test_space', { idempotencyKey: `complete-${spaceId}` })
   await writeFile(`${root}/scene.json`, JSON.stringify(spaces.getControl(spaceId).getSnapshot(), null, 2))
   console.log(`OneBot 沙盒矩阵完成 ${results.length} 项，其中 ${results.filter((item) => item.outcome === 'sandbox-local-file-denied').length} 项为本地文件预期拒绝；报告：${root}`)
 } catch (error) {
@@ -174,7 +223,7 @@ try {
   process.exitCode = 1
   if (spaceId) await call('fail_test_space', { idempotencyKey: 'fail' }).catch(() => {})
 } finally {
-  await writeFile(`${root}/results.json`, JSON.stringify({ spaceId, results, requests: fixture.records.length, logs: logs.printed }, null, 2))
+  await writeFile(`${root}/results.json`, JSON.stringify({ spaceId, spaceIds, results, requests: fixture.records.length, logs: logs.printed }, null, 2))
   await fiber?.dispose()
   await endpoint.stop()
   await app.stop()

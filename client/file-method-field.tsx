@@ -28,7 +28,6 @@ export function FileMethodField(props: SchemaRendererProps) {
               )
             })}
           </RadioGroup>
-          <FieldDescription>{t('tools.description')}</FieldDescription>
         </FieldSet>
       ), true)}
     </div>

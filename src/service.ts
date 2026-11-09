@@ -7,7 +7,6 @@ import type { JmClient } from './jm/client'
 import { FileLinkService } from './file-service'
 import { AlbumDownloader, type DownloadAlbumInput, type DownloadAlbumResult } from './task/downloader'
 import { TaskQueue } from './task/queue'
-import { filterSensitiveFileName } from './utils/file'
 
 export interface DownloadRequest extends DownloadAlbumInput {
   session?: Session
@@ -78,7 +77,7 @@ export class JmService {
   }
 
   private async deliver(session: Session, result: DownloadAlbumResult, signal?: AbortSignal) {
-    const title = this.config.filterSensitiveFileName ? filterSensitiveFileName(result.fileName) : result.fileName
+    const title = result.fileName
     const content = this.config.fileMethod === 'file'
       ? h.file(pathToFileURL(result.filePath).href, { title })
       : h.file(await readFile(result.filePath), result.extension === 'pdf' ? 'application/pdf' : 'application/zip', { title })

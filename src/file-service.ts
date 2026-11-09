@@ -4,7 +4,6 @@ import type { Context } from 'cordis'
 import type {} from '@cordisjs/plugin-server'
 import type { Config } from './config'
 import type { DownloadAlbumResult } from './task/downloader'
-import { filterSensitiveFileName } from './utils/file'
 
 export const FILE_ROUTE = '/chatluna-jmcomic/files'
 
@@ -59,7 +58,6 @@ export class FileLinkService {
       this.records.delete(token)
       return new Response('Not found', { status: 404 })
     }
-    const fileName = this.config.filterSensitiveFileName ? filterSensitiveFileName(record.result.fileName) : record.result.fileName
     const stream = new ReadableStream<Uint8Array>({
       async pull(controller) {
         try {
@@ -80,7 +78,7 @@ export class FileLinkService {
     return new Response(stream, {
       headers: {
         'Content-Type': record.result.extension === 'pdf' ? 'application/pdf' : 'application/zip',
-        'Content-Disposition': `attachment; filename="download.${record.result.extension}"; filename*=UTF-8''${encodeURIComponent(fileName).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)}`,
+        'Content-Disposition': `attachment; filename="download.${record.result.extension}"; filename*=UTF-8''${encodeURIComponent(record.result.fileName).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)}`,
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff'
       }

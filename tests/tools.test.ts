@@ -1,5 +1,5 @@
 import { readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createHost } from './support/host'
 import { Config } from '../src/config'
@@ -57,6 +57,38 @@ describe('v2 原生工具', () => {
     expect(String(app.sent[0])).not.toContain('base64,')
     expect((await readFile(app.service.queue.list()[0].result!.filePath)).subarray(0, 5).toString()).toBe('%PDF-')
   })
+  it('作者、标签、角色和章节页数用于真实导出命名', async () => {
+    app = await createHost({ fileName: '{author}-{name}-{id}-{tags}-{actors}-{chapters}章-{pages}页' })
+    app.fixture.state.authors = ['作者甲', '作者乙']
+    app.fixture.state.tags = ['标签甲', '标签乙']
+    app.fixture.state.actors = ['角色甲']
+    const fileName = '作者甲、作者乙-测试图册100-100-标签甲、标签乙-角色甲-2章-4页.pdf'
+    expect(await app.execute('jmcomic_download', { albumId: '100' }))
+      .toMatchObject({ ok: true, value: { ok: true, fileName } })
+    const output = app.service.queue.list()[0].result!
+    expect(basename(output.filePath)).toBe(fileName)
+    expect((await readFile(output.filePath)).subarray(0, 5).toString()).toBe('%PDF-')
+  })
+  for (const localFile of [false, true]) {
+    const fileMethod = localFile ? 'file' : 'buffer'
+    it(`${fileMethod} 模式下附件、模型结果与磁盘文件名一致`, async () => {
+      app = await createHost({ fileMethod, fileName: '{name}-{author}-{id}' })
+      app.fixture.state.albumName = '命名验证图册'
+      const ids = ['100', '200']
+      const result = await app.execute('jmcomic_download', { albumIds: ids, format: 'zip' })
+      const outputs = app.service.queue.list().map((task) => task.result!)
+      const names = ids.map((id) => `命名验证图册-测试作者-${id}.zip`)
+      expect(result).toMatchObject({ ok: true, value: { ok: true, results: names.map((fileName) => ({ ok: true, fileName })) } })
+      for (const [index, output] of outputs.entries()) {
+        const fileName = names[index]
+        expect(output.fileName).toBe(fileName)
+        expect(basename(output.filePath)).toBe(fileName)
+        expect((await readFile(output.filePath)).subarray(0, 2).toString()).toBe('PK')
+        expect(String(app.sent[index])).toContain(`title="${fileName}"`)
+        if (localFile) expect(String(app.sent[index])).toContain(encodeURIComponent(fileName))
+      }
+    })
+  }
   it('没有接收会话和 URL 服务时在下载前拒绝', async () => {
     app = await createHost()
     expect(await app.execute('jmcomic_download', { albumId: '100' }, 'missing')).toMatchObject({ ok: false })
@@ -98,8 +130,8 @@ describe('v2 原生工具', () => {
   })
   it('配置不包含旧工具编辑字段，默认值保持一致', () => {
     const keys = Object.keys(Config.parse({}))
-    expect(keys).toHaveLength(17)
+    expect(keys).toHaveLength(16)
     expect(keys).not.toEqual(expect.arrayContaining(['enabledTools', 'searchTool', 'browseTool', 'infoTool', 'downloadTool']))
-    expect(Config.parse({})).toMatchObject({ defaultFormat: 'pdf', fileMethod: 'buffer', retryCount: 5, minimumFreeDiskMb: 3000, maxDownloadPages: 300, concurrentDownloadLimit: 8, concurrentDecodeLimit: 4, concurrentTaskLimit: 1, cache: true, fileExpireHours: 24 })
+    expect(Config.parse({})).toMatchObject({ defaultFormat: 'pdf', fileName: '{name} ({id})', fileMethod: 'buffer', retryCount: 5, minimumFreeDiskMb: 3000, maxDownloadPages: 300, concurrentDownloadLimit: 8, concurrentDecodeLimit: 4, concurrentTaskLimit: 1, cache: true, fileExpireHours: 24 })
   })
 })

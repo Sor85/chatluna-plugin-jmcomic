@@ -19,16 +19,28 @@ async function host() {
   if (!address || typeof address === 'string') throw new Error('No server address')
   const origin = `http://127.0.0.1:${address.port}`
   const ready = Promise.withResolvers<FileLinkService>()
-  const fiber = await ctx.plugin((ctx) => ready.resolve(new FileLinkService(ctx, Config.parse({ fileMethod: 'url', publicBaseUrl: origin, filterSensitiveFileName: true }))))
+  const fiber = await ctx.plugin((ctx) => ready.resolve(new FileLinkService(ctx, Config.parse({ fileMethod: 'url', publicBaseUrl: origin }))))
   const service = await ready.promise
   await new Promise((resolve) => setTimeout(resolve, 0))
-  const filePath = join(root, 'test.pdf')
+  const fileName = '命名验证-100.pdf'
+  const filePath = join(root, fileName)
   await writeFile(filePath, '%PDF-test')
-  const result = { albumId: '100', title: '测试图册', filePath, fileName: '测试图册.pdf', extension: 'pdf' } satisfies Parameters<FileLinkService['create']>[0]
+  const result = { albumId: '100', title: '测试图册', filePath, fileName, extension: 'pdf' } satisfies Parameters<FileLinkService['create']>[0]
   return { service, result, origin, fiber }
 }
 
 describe('v2 文件链接', () => {
+  it('下载响应头保留磁盘文件名与内容', async () => {
+    const app = await host()
+    const before = await readFile(app.result.filePath)
+    const url = app.service.create(app.result)
+    const response = await fetch(url)
+    const encodedName = response.headers.get('content-disposition')?.split("filename*=UTF-8''")[1]
+    expect(response.status).toBe(200)
+    expect(decodeURIComponent(encodedName!)).toBe(app.result.fileName)
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(before)
+    expect(await readFile(app.result.filePath)).toEqual(before)
+  })
   it('真实 HTTP 下载、附件名、有效期、缺失文件与卸载', async () => {
     const app = await host()
     const url = app.service.create(app.result)

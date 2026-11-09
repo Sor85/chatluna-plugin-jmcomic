@@ -46,8 +46,12 @@ describe('ui-kit 配置控件', () => {
     const app = await mount()
     expect(container.querySelectorAll('[role="radio"]')).toHaveLength(3)
     expect(container.textContent).toContain('相同绝对路径')
-    expect(container.textContent).toContain('四个工具默认全部注册')
+    expect(container.textContent).not.toContain('四个工具默认全部注册')
     expect(container.textContent).not.toContain('enabledTools')
+    expect(container.textContent).not.toContain('过滤展示文件名')
+    expect(container.textContent).toContain('{author}')
+    expect(container.textContent).toContain('{pages}')
+    expect(container.textContent).not.toContain('{{name}}')
     expect(app.current()).toEqual({})
   })
   it('卡片选项独占标题下方整行，不与标题竞争横向空间', async () => {

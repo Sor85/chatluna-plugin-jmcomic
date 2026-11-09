@@ -5,7 +5,9 @@ import { encryptJmJson, encodeDomainServerResponse } from './jm-crypto'
 export async function createFixture() {
   const image = await sharp({ create: { width: 20, height: 25, channels: 3, background: '#9cb7d8' } }).png().toBuffer()
   const records: Array<{ path: string; method: string; host: string; params: Record<string, string> }> = []
-  const state = { failure: '', failedRequests: 0 }
+  const state: { failure: string; failedRequests: number; albumName?: string; authors: string[]; tags: string[]; actors: string[] } = {
+    failure: '', failedRequests: 0, authors: ['测试作者'], tags: ['测试'], actors: []
+  }
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://fixture.test')
     const target = new URL(url.searchParams.get('target') ?? 'https://fixture.test/')
@@ -23,8 +25,8 @@ export async function createFixture() {
     const timestamp = String(req.headers['tokenparam']).split(',')[0]
     const id = target.searchParams.get('id') ?? '100'
     const data = target.pathname === '/album' ? {
-      id: Number(id), name: id === '404' ? '' : `测试图册${id}`, images: [], addtime: '2026-11-08', description: '中性测试图册',
-      total_views: '100', likes: '20', author: ['测试作者'], tags: ['测试'], actors: [],
+      id: Number(id), name: id === '404' ? '' : state.albumName ?? `测试图册${id}`, images: [], addtime: '2026-11-08', description: '中性测试图册',
+      total_views: '100', likes: '20', author: state.authors, tags: state.tags, actors: state.actors,
       series: id === '100' ? [{ id: '101', name: '章节一', sort: '1' }, { id: '102', name: '章节二', sort: '2' }] : []
     } : target.pathname === '/chapter' ? {
       id: Number(id), name: '测试章节', images: state.failure === 'no-pages' ? [] : ['0001.png', '0002.png'], image_ids: [], series: [], tags: '',

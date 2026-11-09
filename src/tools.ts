@@ -6,7 +6,6 @@ import type { Config, OutputFormat } from './config'
 import type { JmService } from './service'
 import type { BrowseOptions } from './jm/client'
 import type { JmSearchContentJson } from './jm/types'
-import { filterSensitiveFileName } from './utils/file'
 
 export interface DownloadInput {
   albumId?: string
@@ -101,7 +100,7 @@ export function registerTools(ctx: Context, config: Config, service: JmService, 
         if (task?.status === 'completed' && task.result) {
           return {
             ok: true, taskId: task.id, status: 'completed', albumId: task.result.albumId, title: task.result.title,
-            fileName: config.filterSensitiveFileName ? filterSensitiveFileName(task.result.fileName) : task.result.fileName,
+            fileName: task.result.fileName,
             fileUrl: task.result.fileUrl ?? null, ...(password ? { password } : {})
           }
         }

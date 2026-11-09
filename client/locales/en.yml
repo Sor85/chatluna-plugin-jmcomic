@@ -4,4 +4,3 @@ file.title: Local file path
 file.description: Send the file through its local path; in Docker, mount the ChatLuna data directory at the same absolute path in the OneBot container so OneBot can read the file
 url.title: HTTP(S) download link
 url.description: Return an expiring download link to the model without sending a message; recipients must be able to reach the public base URL, and links expire when the plugin restarts
-tools.description: All four tools are registered by default; tool availability, names and descriptions are managed by ChatLuna v2

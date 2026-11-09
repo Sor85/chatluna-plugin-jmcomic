@@ -2,7 +2,7 @@
 // 所有从 JM 标题生成的路径都必须先经过这里清理。
 
 import { rm } from 'node:fs/promises'
-import { SENSITIVE_FILE_NAME_WORDS } from './sensitive-words'
+import type { JmAlbumEntity } from '../jm/types'
 
 // 清理文件名中的非法字符并提供空名称兜底。
 export function sanitizeFileName(fileName: string) {
@@ -18,21 +18,17 @@ export function sanitizeFileName(fileName: string) {
 }
 
 // 根据模板生成输出名，并统一做文件名清理。
-export function formatOutputName(template: string, name: string, id: string) {
-  return sanitizeFileName(
-    template
-      .split('{{name}}').join(name)
-      .split('{{id}}').join(id)
-  )
-}
-
-export function filterSensitiveFileName(fileName: string) {
-  let filtered = fileName
-  for (const word of SENSITIVE_FILE_NAME_WORDS) {
-    if (!filtered.includes(word)) continue
-    filtered = filtered.split(word).join('*'.repeat(word.length))
+export function formatOutputName(template: string, album: JmAlbumEntity) {
+  const fields: Record<string, string | number> = {
+    name: album.name,
+    id: album.id,
+    author: album.authors.join('、'),
+    tags: album.tags.join('、'),
+    actors: album.actors.join('、'),
+    chapters: album.photos.length,
+    pages: album.photos.reduce((total, photo) => total + photo.images.length, 0)
   }
-  return filtered
+  return sanitizeFileName(template.replace(/\{(name|id|author|tags|actors|chapters|pages)\}/g, (_match, key: string) => String(fields[key])))
 }
 
 // 删除目录或文件，不存在时静默跳过。

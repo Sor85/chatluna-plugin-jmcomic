@@ -9,7 +9,6 @@ export interface Config {
   publicBaseUrl: string
   password: string
   fileName: string
-  filterSensitiveFileName: boolean
   allowAIChangeFormat: boolean
   retryCount: number
   minimumFreeDiskMb: number
@@ -30,9 +29,7 @@ export const Config: Schema<Partial<Config>, Config> = Schema.intersect([
       Schema.const('zip').description('ZIP 压缩包')
     ]).label('默认导出格式').default('pdf'),
     fileName: Schema.string().min(1).label('文件名模板')
-      .description('导出文件名模板，可使用 {{name}} 和 {{id}}').default('{{name}} ({{id}})'),
-    filterSensitiveFileName: Schema.boolean().label('过滤展示文件名')
-      .description('发送下载结果时，用 * 替换文件名中的色情敏感词；只影响发送展示名，不修改实际文件路径').default(false),
+      .description('导出文件名模板，支持 {name} 标题、{id} ID、{author} 作者、{tags} 标签、{actors} 角色、{chapters} 章节数、{pages} 页数；多值以顿号分隔，缺失字段留空').default('{name} ({id})'),
     password: Schema.string().role('secret').label('默认密码')
       .description('PDF 和 ZIP 默认密码；留空则不加密').default(''),
     allowAIChangeFormat: Schema.boolean().label('允许 AI 临时切换格式')
