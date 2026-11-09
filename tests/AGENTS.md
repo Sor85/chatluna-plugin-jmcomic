@@ -9,4 +9,5 @@
 - 文件名回归使用中性固件，对照 buffer/file 的附件标题、工具返回 `fileName`、URL 的 `Content-Disposition` 与实际磁盘名保持一致。模板字段覆盖多作者、标签、角色及实际章节/页数。
 - onebot-sandbox 验证使用独立测试空间，显式传 `spaceId`，同时检查私聊、群聊与 OneBot 文件动作；保留测试空间供复查，收尾停用机器人。文件名用例按传输方式分别新建空间，避免跨用例媒体内容去重沿用旧名称；幂等键包含空间标识。
 - 永不将测试 token、WebUI session 或后端密码写进测试源码及报告。
+- 发布脚本回归在临时源码与宿主目录中运行，用独立 PATH 的命令桩覆盖 Git、Yarn、npm、tar 和验证命令，检查执行顺序、失败中止、包校验及标签推送；不得调用真实 registry 或修改真实 Git。真实发布演练另用 `node scripts/publish.mjs --dry-run`。
 - 说明清单守卫检查所有子目录 `AGENTS.md` 都在根清单登记且存在。

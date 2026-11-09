@@ -10,6 +10,14 @@ ChatLuna v2 外部插件，由 `koishi-plugin-chatluna-jmcomic` 迁移，协议 
 - 新增 Tailwind 类或修改构建产物后，验证前完整重启共享开发服务，先协调其他使用者；停止 launcher 和 worker 并确认端口释放。
 - 不自动提交、创建分支或发布。v2 依赖未公开发布时仅在本地 workspace 构建。
 
+## 发布
+
+- 在源码仓库运行 `node scripts/publish.mjs`，不通过 Yarn 启动，不走 CI；依赖仍在私有 v2 workspace 中。
+- `--dry-run` 允许未提交改动，跳过 Git 远端和 npm 登录检查，但仍同步、清理副本 `lib`/`dist`/`tsconfig.tsbuildinfo`、构建、双端类型检查、测试、打包和 `npm publish --dry-run`；不实际发布或创建、推送标签。
+- 正式发布要求工作区干净、当前分支与 `origin` 同名分支的提交一致、`v<版本>` 标签不存在且已登录 npm。脚本不更新版本、不提交代码、不推送分支；两步验证可传 `--otp=<验证码>`，不得记录验证码。
+- 用 `yarn pack` 改写 `workspace:*`，验证包入口、声明、客户端产物及 README 后，从解包目录发布到 `https://registry.npmjs.org/`，不能直接发布 tgz，否则市场可能缺少 README。稳定版使用 `latest`，预发布用首个标识（如 `alpha`、`dev`），纯数字标识用 `next`。
+- npm 接受发布后等待 dist-tag 指向目标版本，再创建并推送 Git 标签。npm 发布与 Git 推送不是原子操作，失败后先核对 registry 和标签，不重复发布。临时打包目录会打印并保留，便于复查。
+
 ## 数据与安全
 
 - 测试仅使用隔离的 onebot-sandbox 测试空间和无敏感内容的本地 API 固件，不修改真实会话、用户、权限或预设。

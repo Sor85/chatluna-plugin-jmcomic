@@ -62,6 +62,20 @@
 
 每次网络请求超时 30 秒，API 响应上限 8 MiB，单张图片上限 64 MiB。下载工具最长等待 15 分钟；取消调用或卸载插件后，不继续发送文件。批量下载返回逐本结果，部分失败不影响其他成功项。
 
+## 发布
+
+在源码仓库执行，要求本机有 Node.js 24+、Git、Yarn、npm、tar，以及已安装依赖的 ChatLuna 开发仓库（默认 `../../chatluna-v2-mirror`，可通过 `CHATLUNA_V2_ROOT` 指定）。
+
+```bash
+node scripts/publish.mjs --dry-run        # 构建、检查、测试和打包演练，不实际发布
+node scripts/publish.mjs                  # 发布 package.json 中的版本并推送版本标签
+node scripts/publish.mjs --otp=<验证码>   # 账号启用两步验证时提供一次性验证码
+```
+
+正式发布前需更新版本、提交并推送到 `origin` 的同名分支、登录 npm。脚本不自动改版本或提交；稳定版发布到 `latest`，预发布版本按首个标识选择标签（如 `alpha`、`dev`，纯数字标识使用 `next`）。确认 npm 标签指向目标版本后才创建和推送 `v<版本>` Git 标签。
+
+演练允许未提交改动，但仍会同步源码并清理、重建开发仓库中的插件产物。发布包使用 `yarn pack` 生成，再从解包目录发布以保留 README 元数据；临时包目录会打印并保留。发布或标签推送中断后需先核对 npm 与 Git 状态，避免重复发布。
+
 ## 许可证
 
 MIT。
