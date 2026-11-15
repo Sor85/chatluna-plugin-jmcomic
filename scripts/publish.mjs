@@ -68,7 +68,8 @@ async function main() {
   const bin = path.join(v2Root, 'node_modules', '.bin')
   run(path.join(bin, 'tsc'), ['-p', 'tsconfig.json', '--noEmit'], target)
   run(path.join(bin, 'tsc'), ['-p', 'tsconfig.client.json', '--noEmit'], target)
-  run(path.join(bin, 'vitest'), ['run'], target)
+  // 用插件自己声明的 vitest；宿主根目录的 vitest 大版本可能不同。
+  run('yarn', ['test'], target)
 
   const workdir = fs.mkdtempSync(path.join(os.tmpdir(), 'jmcomic-publish-'))
   const tarball = path.join(workdir, 'package.tgz')

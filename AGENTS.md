@@ -6,7 +6,7 @@ ChatLuna v2 外部插件，由 `koishi-plugin-chatluna-jmcomic` 迁移，协议 
 
 - 本目录是唯一源码；通过 `node scripts/sync-to-v2.mjs --once` 单向同步到 ChatLuna v2 仓库的 `external/jmcomic`。不要直接编辑副本。
 - 默认 v2 路径为 `../../chatluna-v2-mirror`，可用 `CHATLUNA_V2_ROOT` 指定。源码目录不安装依赖、不保存锁文件；脚本直接用 node 执行。
-- 在 v2 根目录运行 `yarn yakumo build jmcomic`；在 `external/jmcomic` 运行 `../../node_modules/.bin/vitest run`，以及 `../../node_modules/.bin/tsc -p tsconfig.json --noEmit`、`../../node_modules/.bin/tsc -p tsconfig.client.json --noEmit`。
+- 在 v2 根目录运行 `yarn yakumo build jmcomic`；在 `external/jmcomic` 运行 `yarn test`（使用插件声明的 vitest，根目录 vitest 大版本可能不同），以及 `../../node_modules/.bin/tsc -p tsconfig.json --noEmit`、`../../node_modules/.bin/tsc -p tsconfig.client.json --noEmit`。
 - 新增 Tailwind 类或修改构建产物后，验证前完整重启共享开发服务，先协调其他使用者；停止 launcher 和 worker 并确认端口释放。
 - 不自动提交、创建分支或发布。v2 依赖未公开发布时仅在本地 workspace 构建。
 
