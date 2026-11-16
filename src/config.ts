@@ -33,15 +33,7 @@ export const Config: Schema<Partial<Config>, Config> = Schema.intersect([
     password: Schema.string().role('secret').label('默认密码')
       .description('PDF 和 ZIP 默认密码；留空则不加密').default(''),
     allowAIChangeFormat: Schema.boolean().label('允许 AI 临时切换格式')
-      .description('允许模型更改本次导出格式；关闭时工具参数中不提供格式选项').default(true),
-    zipLevel: Schema.number().min(0).max(9).step(1).label('ZIP 压缩等级')
-      .description('0 最快但体积较大，9 最慢但体积较小').default(6),
-    maxDownloadPages: Schema.number().min(1).max(10000).step(1).label('单本页数上限')
-      .description('单个本子允许下载的最大页数').default(300),
-    minimumFreeDiskMb: Schema.number().min(0).max(1048576).label('最少可用磁盘空间')
-      .description('下载目录所在磁盘最少的可用空间，单位 MB；0 为关闭').default(3000),
-    retryCount: Schema.number().min(1).max(10).step(1).label('请求重试次数')
-      .description('JMComic API 和图片下载失败时，每个域名的最大尝试次数').default(5)
+      .description('允许模型更改本次导出格式；关闭时工具参数中不提供格式选项').default(true)
   }).description('下载与导出'),
   Schema.object({
     fileMethod: Schema.union([
@@ -57,6 +49,16 @@ export const Config: Schema<Partial<Config>, Config> = Schema.intersect([
       .description('下载文件和缓存的保留小时数；下载链接在插件重启后失效').default(24)
   }).description('发送与缓存'),
   Schema.object({
+    zipLevel: Schema.number().min(0).max(9).step(1).label('ZIP 压缩等级')
+      .description('0 最快但体积较大，9 最慢但体积较小').default(6),
+    maxDownloadPages: Schema.number().min(1).max(10000).step(1).label('单本页数上限')
+      .description('单个本子允许下载的最大页数').default(300),
+    minimumFreeDiskMb: Schema.number().min(0).max(1048576).label('最少可用磁盘空间')
+      .description('下载目录所在磁盘最少的可用空间，单位 MB；0 为关闭').default(3000),
+    retryCount: Schema.number().min(1).max(10).step(1).label('请求重试次数')
+      .description('JMComic API 和图片下载失败时，每个域名的最大尝试次数').default(5)
+  }).description('压缩与下载限制').collapse(true),
+  Schema.object({
     concurrentTaskLimit: Schema.number().min(1).max(5).step(1).label('整本任务并发数')
       .description('同时处理的整本下载任务数量').default(1),
     concurrentDownloadLimit: Schema.number().min(1).max(20).step(1).label('图片下载并发数')
@@ -64,5 +66,5 @@ export const Config: Schema<Partial<Config>, Config> = Schema.intersect([
     concurrentDecodeLimit: Schema.number().min(1).max(20).step(1).label('图片解码并发数')
       .description('单个下载任务内同时解码图片的最大数量').default(4),
     debug: Schema.boolean().label('调试日志').description('输出请求重试和下载进度，不记录文件密码与内容').default(false)
-  }).description('性能与调试')
+  }).description('性能与调试').collapse(true)
 ])

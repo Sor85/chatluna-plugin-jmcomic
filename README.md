@@ -15,20 +15,39 @@
 
 ## 配置
 
+设置页按以下分组展示，低频分组默认折叠，展开状态由宿主记忆。
+
+**下载与导出**
+
 | 配置 | 默认值 | 说明 |
 | --- | --- | --- |
 | `defaultFormat` | `pdf` | PDF 或 ZIP |
 | `fileName` | `{name} ({id})` | 单花括号导出名模板，字段见下文，文件名统一清理 |
 | `password` | 空 | PDF/ZIP 默认密码；工具传空字符串可取消本次加密 |
 | `allowAIChangeFormat` | `true` | 允许模型临时改格式；关闭后移除工具的 format 参数 |
-| `zipLevel` | `6` | ZIP 压缩等级 0–9 |
-| `maxDownloadPages` | `300` | 单本最大页数 |
-| `minimumFreeDiskMb` | `3000` | 最少剩余磁盘空间；0 关闭检查 |
-| `retryCount` | `5` | 每个域名的最大尝试次数 |
+
+**发送与缓存**
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
 | `fileMethod` | `buffer` | 文件传输方式，见下文 |
 | `publicBaseUrl` | 空 | 链接模式公开地址；回退到 `server.baseUrl` |
 | `cache` | `true` | 保留下载缓存 |
 | `fileExpireHours` | `24` | 缓存与下载链接保留小时数 |
+
+**压缩与下载限制（默认折叠）**
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
+| `zipLevel` | `6` | ZIP 压缩等级 0–9 |
+| `maxDownloadPages` | `300` | 单本最大页数 |
+| `minimumFreeDiskMb` | `3000` | 最少剩余磁盘空间；0 关闭检查 |
+| `retryCount` | `5` | 每个域名的最大尝试次数 |
+
+**性能与调试（默认折叠）**
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
 | `concurrentTaskLimit` | `1` | 整本任务并发数 |
 | `concurrentDownloadLimit` | `8` | 单任务图片下载并发数 |
 | `concurrentDecodeLimit` | `4` | 单任务图片解码并发数 |
