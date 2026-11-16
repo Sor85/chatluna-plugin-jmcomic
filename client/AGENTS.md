@@ -8,3 +8,4 @@
 - 中文和英文文案同步维护在 `locales/zh.yml` 与 `locales/en.yml`，使用宿主 locale API。
 - 文件传输表单只展示传输选项与对应说明，不附加工具管理说明，不显示工具启用列表或工具名称、描述编辑器。
 - 配置值变更只调用 `props.onChange`，草稿和保存交给宿主管理；注册通过当前 fiber 的 effect 释放。
+- `tsconfig.client.json` 关闭 `noPropertyAccessFromIndexSignature`：客户端检查会连带检查宿主 `@chatluna/ui-schema-form/client` 的 TS 源码，宿主代码不按此选项编写；做法与 v2 `external/workflow` 一致。服务端 `tsconfig.json` 保持开启。

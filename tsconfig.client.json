@@ -5,6 +5,7 @@
     "incremental": false,
     "emitDeclarationOnly": false,
     "noEmit": true,
+    "noPropertyAccessFromIndexSignature": false,
     "rootDir": ".",
     "types": ["node", "react", "react-dom"]
   },

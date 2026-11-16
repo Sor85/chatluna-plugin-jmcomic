@@ -48,7 +48,7 @@ const command = path.basename(process.argv[1]); const args = process.argv.slice(
 const state = JSON.parse(process.env.PUBLISH_TEST_STATE);
 const target = path.join(process.env.CHATLUNA_V2_ROOT, 'external/jmcomic');
 fs.appendFileSync(process.env.PUBLISH_TEST_LOG, JSON.stringify({ command, args, cwd: process.cwd() }) + '\\n');
-if (state.failCommand === command || (state.failPublish && command === 'npm' && args[0] === 'publish')) process.exit(7);
+if (state.failCommand === command || state.failCommand === command + ' ' + args[0] || (state.failPublish && command === 'npm' && args[0] === 'publish')) process.exit(7);
 if (command === 'git') {
   if (args[0] === 'status' && state.dirty) console.log(' M README.md');
   if (args[0] === 'branch') console.log('main');
@@ -77,10 +77,8 @@ if (command === 'npm' && args[0] === 'view') console.log(JSON.stringify(state.ve
     await writeFile(join(bin, name), stub)
     await chmod(join(bin, name), 0o755)
   }
-  for (const name of ['vitest', 'tsc']) {
-    await writeFile(join(host, 'node_modules/.bin', name), stub)
-    await chmod(join(host, 'node_modules/.bin', name), 0o755)
-  }
+  await writeFile(join(host, 'node_modules/.bin/tsc'), stub)
+  await chmod(join(host, 'node_modules/.bin/tsc'), 0o755)
   const result = spawnSync(process.execPath, [join(source, 'scripts/publish.mjs'), ...args], {
     cwd: source, encoding: 'utf8', timeout: 10000,
     env: { ...process.env, PATH: bin, TMPDIR: root, TMP: root, TEMP: root, CHATLUNA_V2_ROOT: host, PUBLISH_TEST_LOG: log, PUBLISH_TEST_STATE: JSON.stringify(state) },
@@ -108,7 +106,7 @@ describe('本地 npm 发布流程', () => {
     expect(result.commands.filter(({ command }) => command === 'tsc').map(({ args }) => args)).toEqual([
       ['-p', 'tsconfig.json', '--noEmit'], ['-p', 'tsconfig.client.json', '--noEmit'],
     ])
-    expect(result.commands.find(({ command }) => command === 'vitest')).toMatchObject({ args: ['run'], cwd: result.target })
+    expect(result.commands.find(({ command, args }) => command === 'yarn' && args[0] === 'test')).toMatchObject({ args: ['test'], cwd: result.target })
     const publish = result.commands.find(({ command }) => command === 'npm')!
     expect(publish.args).toContain('--dry-run')
     expect(publish.args[0]).toBe('publish')
@@ -141,7 +139,7 @@ describe('本地 npm 发布流程', () => {
     expect(result.commands.some(({ command }) => ['sync', 'yarn', 'npm'].includes(command))).toBe(false)
   })
 
-  it.each(['yarn', 'tsc', 'vitest'])('%s 失败后不发布或打标签', async (failCommand) => {
+  it.each(['yarn', 'tsc', 'yarn test'])('%s 失败后不发布或打标签', async (failCommand) => {
     const result = await execute(['--dry-run'], { failCommand })
     expect(result.status).toBe(1)
     expect(result.commands.some(({ command }) => ['npm', 'git'].includes(command))).toBe(false)
